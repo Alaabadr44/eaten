@@ -1,0 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Raleway:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.cdnfonts.com/css/brittany-signature');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand Primary Colors */
+    --eaten-beige: 30 18% 77%;
+    /* #d1c6b8 */
+    --eaten-taupe: 30 14% 63%;
+    /* #afa394 */
+    --eaten-dark: 30 13% 40%;
+    /* #726658 */
+
+    /* Brand Secondary Colors */
+    --eaten-charcoal: 30 12% 29%;
+    /* #544b42 */
+    --eaten-black: 0 0% 0%;
+    /* #000000 */
+    --eaten-white: 0 0% 100%;
+    /* #ffffff */
+
+    --background: 30 18% 77%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 30 12% 29%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 12% 29%;
+
+    --primary: 30 13% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 18% 77%;
+    --secondary-foreground: 30 12% 29%;
+
+    --muted: 30 14% 63%;
+    --muted-foreground: 30 12% 29%;
+
+    --accent: 30 12% 29%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 14% 63%;
+    --input: 30 14% 63%;
+    --ring: 30 13% 40%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --eaten-beige: 30 18% 77%;
+    --eaten-taupe: 30 14% 63%;
+    --eaten-dark: 30 13% 40%;
+    --eaten-charcoal: 30 12% 29%;
+    --eaten-black: 0 0% 0%;
+    --eaten-white: 0 0% 100%;
+
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 30 12% 29%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 30 12% 29%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 30 18% 77%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 30 13% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 30 14% 63%;
+    --muted-foreground: 0 0% 100%;
+
+    --accent: 30 14% 63%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 13% 40%;
+    --input: 30 13% 40%;
+    --ring: 30 18% 77%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  .nav-link {
+    @apply relative text-eaten-charcoal font-medium transition-colors duration-300;
+  }
+
+  .nav-link::after {
+    content: '';
+    @apply absolute left-0 bottom-0 w-full h-0.5 bg-eaten-charcoal scale-x-0 origin-right transition-transform duration-300;
+  }
+
+  .nav-link:hover::after,
+  .nav-link.active::after {
+    @apply scale-x-100 origin-left;
+  }
+
+  .section-dark {
+    @apply bg-eaten-charcoal text-white;
+  }
+
+  .section-light {
+    @apply bg-eaten-beige;
+  }
+
+  .catering-card {
+    @apply bg-card/95 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-xl;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fadeUp 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.8s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.8s ease-out forwards;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
