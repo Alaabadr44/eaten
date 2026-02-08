@@ -1,0 +1,23 @@
+# compiled output
+/dist
+/node_modules
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# env
+.env
+.env.production
+
+# IDE
+.idea
+.vscode
+*.swp
+*.iml
