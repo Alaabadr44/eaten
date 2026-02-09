@@ -19,6 +19,11 @@ const admins_module_1 = require("./admins/admins.module");
 const auth_module_1 = require("./auth/auth.module");
 const cancellation_reasons_module_1 = require("./cancellation-reasons/cancellation-reasons.module");
 const chats_module_1 = require("./chats/chats.module");
+const permissions_module_1 = require("./permissions/permissions.module");
+const system_logs_module_1 = require("./system-logs/system-logs.module");
+const user_context_module_1 = require("./common/user-context/user-context.module");
+const core_1 = require("@nestjs/core");
+const user_context_interceptor_1 = require("./common/interceptors/user-context.interceptor");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
                 }),
                 inject: [config_1.ConfigService],
             }),
+            user_context_module_1.UserContextModule,
             zones_module_1.ZonesModule,
             services_module_1.ServicesModule,
             bookings_module_1.BookingsModule,
@@ -49,9 +55,17 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             cancellation_reasons_module_1.CancellationReasonsModule,
             chats_module_1.ChatsModule,
+            permissions_module_1.PermissionsModule,
+            system_logs_module_1.SystemLogsModule,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        providers: [
+            app_service_1.AppService,
+            {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: user_context_interceptor_1.UserContextInterceptor,
+            },
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

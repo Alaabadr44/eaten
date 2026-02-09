@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
+import { Permission } from '../../permissions/entities/permission.entity';
 
 @Entity()
 export class Admin {
@@ -16,6 +19,10 @@ export class Admin {
 
   @Column()
   passwordHash: string;
+
+  @ManyToMany(() => Permission)
+  @JoinTable()
+  permissions: Permission[];
 
   @CreateDateColumn()
   createdAt: Date;

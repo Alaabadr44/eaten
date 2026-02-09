@@ -10,15 +10,18 @@ exports.AdminsModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const admins_service_1 = require("./admins.service");
+const admins_controller_1 = require("./admins.controller");
 const admin_entity_1 = require("./entities/admin.entity");
+const permission_entity_1 = require("../permissions/entities/permission.entity");
 let AdminsModule = class AdminsModule {
 };
 exports.AdminsModule = AdminsModule;
 exports.AdminsModule = AdminsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([admin_entity_1.Admin])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([admin_entity_1.Admin, permission_entity_1.Permission])],
         providers: [admins_service_1.AdminsService],
         exports: [admins_service_1.AdminsService],
+        controllers: [admins_controller_1.AdminsController],
     })
 ], AdminsModule);
 //# sourceMappingURL=admins.module.js.map

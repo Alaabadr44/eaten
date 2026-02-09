@@ -9,13 +9,15 @@ async function bootstrap() {
 
   const email = 'admin@eaten.com';
   const password = 'admin';
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   const passwordHash = await bcrypt.hash(password, 10);
 
   const existing = await adminsService.findOne(email);
   if (existing) {
     console.log('Admin already exists');
   } else {
-    await adminsService.create(email, passwordHash);
+    // Service now accepts DTO and hashes password internally
+    await adminsService.create({ email, password });
     console.log(`Admin created: ${email} / ${password}`);
   }
 

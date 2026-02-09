@@ -48,7 +48,7 @@ async function bootstrap() {
         console.log('Admin already exists');
     }
     else {
-        await adminsService.create(email, passwordHash);
+        await adminsService.create({ email, password });
         console.log(`Admin created: ${email} / ${password}`);
     }
     await app.close();

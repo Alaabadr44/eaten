@@ -10,6 +10,11 @@ import { AdminsModule } from './admins/admins.module';
 import { AuthModule } from './auth/auth.module';
 import { CancellationReasonsModule } from './cancellation-reasons/cancellation-reasons.module';
 import { ChatsModule } from './chats/chats.module';
+import { PermissionsModule } from './permissions/permissions.module';
+import { SystemLogsModule } from './system-logs/system-logs.module';
+import { UserContextModule } from './common/user-context/user-context.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { UserContextInterceptor } from './common/interceptors/user-context.interceptor';
 
 @Module({
   imports: [
@@ -30,6 +35,7 @@ import { ChatsModule } from './chats/chats.module';
       }),
       inject: [ConfigService],
     }),
+    UserContextModule,
     ZonesModule,
     ServicesModule,
     BookingsModule,
@@ -37,8 +43,16 @@ import { ChatsModule } from './chats/chats.module';
     AuthModule,
     CancellationReasonsModule,
     ChatsModule,
+    PermissionsModule,
+    SystemLogsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserContextInterceptor,
+    },
+  ],
 })
 export class AppModule {}

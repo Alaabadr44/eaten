@@ -13,6 +13,10 @@ import ServicesManager from "./pages/admin/ServicesManager";
 import ZonesManager from "./pages/admin/ZonesManager";
 import BookingsManager from "./pages/admin/BookingsManager";
 import ManageChats from "./pages/admin/ManageChats";
+import ManageReports from "./pages/admin/ManageReports";
+import ManageUsers from "./pages/admin/ManageUsers";
+import ManagePermissions from "./pages/admin/ManagePermissions";
+import SystemLogs from "./pages/admin/SystemLogs";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -33,7 +37,12 @@ const App = () => (
             <Route path="services" element={<ServicesManager />} />
             <Route path="zones" element={<ZonesManager />} />
             <Route path="bookings" element={<BookingsManager />} />
+            <Route path="bookings" element={<BookingsManager />} />
             <Route path="chats" element={<ManageChats />} />
+            <Route path="reports" element={<ManageReports />} />
+            <Route path="users" element={<ManageUsers />} />
+            <Route path="permissions" element={<ManagePermissions />} />
+            <Route path="logs" element={<SystemLogs />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

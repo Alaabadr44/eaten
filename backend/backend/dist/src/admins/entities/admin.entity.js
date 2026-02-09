@@ -11,10 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Admin = void 0;
 const typeorm_1 = require("typeorm");
+const permission_entity_1 = require("../../permissions/entities/permission.entity");
 let Admin = class Admin {
     id;
     email;
     passwordHash;
+    permissions;
     createdAt;
     updatedAt;
 };
@@ -31,6 +33,11 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Admin.prototype, "passwordHash", void 0);
+__decorate([
+    (0, typeorm_1.ManyToMany)(() => permission_entity_1.Permission),
+    (0, typeorm_1.JoinTable)(),
+    __metadata("design:type", Array)
+], Admin.prototype, "permissions", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
