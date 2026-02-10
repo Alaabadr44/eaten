@@ -73,7 +73,7 @@ const AdminLayout = () => {
             onClick={toggleLanguage}
           >
             <Globe className="h-4 w-4" />
-            {i18n.language === "en" ? "العربية" : "English"}
+            {i18n.language === "en" ? "العربية" /* cspell:disable-line */ : "English"}
           </Button>
           <Button variant="ghost" className="w-full text-white hover:text-white/80 hover:bg-white/10 justify-start" onClick={handleLogout}>
             {t('sidebar.logout')}
