@@ -19,10 +19,10 @@ else
 fi
 
 # Determine Docker Compose command
-if command -v docker-compose &> /dev/null; then
-    DOCKER_COMPOSE_CMD="docker-compose"
-elif docker compose version &> /dev/null; then
+if docker compose version &> /dev/null; then
     DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
 else
     echo "Error: Docker Compose not found. Please install Docker Desktop or docker-compose."
     exit 1
