@@ -28,6 +28,18 @@ else
     exit 1
 fi
 
-# Start Docker Compose
+# Start Docker Compose in detached mode
 echo "Starting Docker Compose using $DOCKER_COMPOSE_CMD..."
-$DOCKER_COMPOSE_CMD up --build
+$DOCKER_COMPOSE_CMD up -d --build
+
+# Wait for backend to be ready (naive wait)
+echo "Waiting for backend to start..."
+sleep 10
+
+# Run admin creation script
+echo "Creating default admin user..."
+$DOCKER_COMPOSE_CMD exec -T backend node dist/scripts/create-admin
+
+# Follow logs
+echo "Attaching to logs..."
+$DOCKER_COMPOSE_CMD logs -f
