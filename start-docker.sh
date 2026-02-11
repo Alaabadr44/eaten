@@ -40,6 +40,10 @@ sleep 10
 echo "Creating default admin user..."
 $DOCKER_COMPOSE_CMD exec -T backend node dist/scripts/create-admin
 
+# Run service seeding script
+echo "Seeding services..."
+$DOCKER_COMPOSE_CMD exec -T backend node dist/scripts/create-services
+
 # Follow logs
 echo "Attaching to logs..."
 $DOCKER_COMPOSE_CMD logs -f
