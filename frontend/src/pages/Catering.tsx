@@ -55,7 +55,7 @@ const Catering = () => {
                     zoneId: formData.zoneId,
                     name: formData.name,
                     phone: formData.phone,
-                    eventCapacity: formData.capacity === "1" ? "LESS_THAN_5" : formData.capacity === "2" ? "BETWEEN_5_AND_20" : "MORE_THAN_20"
+                    eventCapacity: Number(formData.capacity)
                 }),
             });
 

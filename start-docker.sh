@@ -44,6 +44,10 @@ $DOCKER_COMPOSE_CMD exec -T backend node dist/scripts/create-admin
 echo "Seeding services..."
 $DOCKER_COMPOSE_CMD exec -T backend node dist/scripts/create-services
 
+# Run zone seeding script
+echo "Seeding zones..."
+$DOCKER_COMPOSE_CMD exec -T backend node dist/scripts/create-zones
+
 # Follow logs
 echo "Attaching to logs..."
 $DOCKER_COMPOSE_CMD logs -f

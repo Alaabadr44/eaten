@@ -22,9 +22,9 @@ export enum EventType {
 }
 
 export enum EventCapacity {
-  LESS_THAN_5 = 'LESS_THAN_5',
-  BETWEEN_5_AND_20 = 'BETWEEN_5_AND_20',
-  MORE_THAN_20 = 'MORE_THAN_20',
+  LESS_THAN_5 = 1,
+  BETWEEN_5_AND_20 = 2,
+  MORE_THAN_20 = 3,
 }
 
 @Entity()

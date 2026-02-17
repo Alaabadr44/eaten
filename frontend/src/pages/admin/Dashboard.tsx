@@ -10,10 +10,16 @@ interface Booking {
   id: string;
   eventDate: string;
   eventType: string;
-  eventCapacity: string;
+  eventCapacity: number;
   status: string;
   zone?: { name: string };
 }
+
+const CAPACITY_MAP: Record<number, string> = {
+  1: "Less than 5 people",
+  2: "5-20 people",
+  3: "More than 20 people",
+};
 
 const Dashboard = () => {
   const { t, i18n } = useTranslation();
@@ -41,12 +47,12 @@ const Dashboard = () => {
   const stats = useMemo(() => {
     if (bookings.length === 0) return null;
 
-    const getMostFrequent = (arr: string[]) => {
+    const getMostFrequent = (arr: (string | number)[]) => {
       if (arr.length === 0) return "N/A";
       const hashmap = arr.reduce((acc, val) => {
         acc[val] = (acc[val] || 0) + 1;
         return acc;
-      }, {} as Record<string, number>);
+      }, {} as Record<string | number, number>);
       return Object.keys(hashmap).reduce((a, b) => hashmap[a] > hashmap[b] ? a : b);
     };
 
@@ -128,7 +134,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-eaten-dark capitalize">{stats.mostPopularCapacity.replace(/_/g, " ").toLowerCase().replace("than", "")}</div>
+              <div className="text-2xl font-bold text-eaten-dark capitalize">{CAPACITY_MAP[stats.mostPopularCapacity as unknown as number] || stats.mostPopularCapacity}</div>
             </CardContent>
           </Card>
           <Card className="bg-eaten-beige/20 border-eaten-beige">

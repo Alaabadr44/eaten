@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { AddGuestMessageDto } from './dto/add-guest-message.dto';
 import { Chat } from './entities/chat.entity';
 
 @ApiTags('Chats')
@@ -31,6 +32,16 @@ export class ChatsController {
     @Body() createMessageDto: CreateMessageDto,
   ) {
     return this.chatsService.addMessage(id, createMessageDto);
+  }
+
+  @Post('conversation')
+  @ApiOperation({ summary: 'Add a message to a guest conversation by ID' })
+  @ApiResponse({
+    status: 201,
+    description: 'The message has been successfully saved.',
+  })
+  addGuestMessage(@Body() dto: AddGuestMessageDto) {
+    return this.chatsService.processGuestMessage(dto);
   }
 
   @Get()

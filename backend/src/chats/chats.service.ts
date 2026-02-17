@@ -5,6 +5,7 @@ import { Chat, ChatStatus } from './entities/chat.entity';
 import { ChatMessage, MessageSender } from './entities/chat-message.entity';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { AddGuestMessageDto } from './dto/add-guest-message.dto';
 
 @Injectable()
 export class ChatsService {
@@ -63,6 +64,28 @@ export class ChatsService {
     return {
       message: savedMessage,
     };
+  }
+
+  async processGuestMessage(dto: AddGuestMessageDto) {
+    let chat = await this.chatsRepository.findOne({
+      where: { guestId: dto.conversationId, status: ChatStatus.ACTIVE },
+    });
+
+    if (!chat) {
+      chat = this.chatsRepository.create({
+        guestId: dto.conversationId,
+        status: ChatStatus.ACTIVE,
+      });
+      chat = await this.chatsRepository.save(chat);
+    }
+
+    const message = this.chatMessagesRepository.create({
+      chat: chat,
+      sender: dto.sender,
+      content: dto.message,
+    });
+
+    return await this.chatMessagesRepository.save(message);
   }
 
   async findOne(id: string) {

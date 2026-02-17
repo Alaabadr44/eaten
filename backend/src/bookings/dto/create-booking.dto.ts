@@ -18,9 +18,11 @@ export class CreateBookingDto {
 
   @ApiProperty({
     enum: EventCapacity,
-    description: 'Number of people attending',
+    description: 'Number of people attending (1: <5, 2: 5-20, 3: >20)',
+    example: 2,
   })
   @IsEnum(EventCapacity)
+  @IsNumber()
   @IsNotEmpty()
   eventCapacity: EventCapacity;
 

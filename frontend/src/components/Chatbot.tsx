@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { customAlphabet } from "nanoid";
+
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,6 +12,12 @@ interface Faq {
   answer: string;
 }
 
+interface ChatResponse {
+  response: {
+    messages: string[];
+  };
+}
+
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [faqs, setFaqs] = useState<Faq[]>([]);
@@ -17,15 +25,126 @@ const Chatbot = () => {
     { text: "Hi! How can I help you today?", isUser: false },
   ]);
 
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("chat_conversation_id");
+    if (storedId) {
+      setConversationId(storedId);
+    }
+  }, []);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("chat_conversation_id");
+    if (storedId) {
+      setConversationId(storedId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   useEffect(() => {
     const API_URL = import.meta.env.VITE_API_URL || "/api";
+    // Keep FAQs for initial suggestions if needed, or remove if fully replacing
     fetch(`${API_URL}/faqs`)
       .then((res) => res.json())
       .then((data) => setFaqs(data))
       .catch((err) => console.error("Failed to fetch FAQs", err));
   }, []);
 
+  const saveMessageToBackend = async (conversationId: string, message: string, sender: "USER" | "BOT") => {
+    const API_URL = import.meta.env.VITE_API_URL || "/api";
+    try {
+      await fetch(`${API_URL}/chats/conversation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, message, sender }),
+      });
+    } catch (error) {
+      console.error("Failed to save message to backend", error);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = input;
+    setInput("");
+    setMessages((prev) => [...prev, { text: userMessage, isUser: true }]);
+    setIsLoading(true);
+
+    let currentConversationId = conversationId;
+    if (!currentConversationId) {
+       const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 10);
+       currentConversationId = `conv_${nanoid()}`;
+       setConversationId(currentConversationId);
+       localStorage.setItem("chat_conversation_id", currentConversationId);
+    }
+
+    // Save User message to backend
+    saveMessageToBackend(currentConversationId, userMessage, "USER");
+
+    try {
+      const response = await fetch("http://192.168.1.78:9010/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversationId: currentConversationId,
+          message: userMessage, 
+          history: [], 
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to get response");
+
+      const data = await response.json();
+
+      // Parse response based on provided format: { response: { messages: ["..."] } }
+      let botMessage = "I received your message but couldn't parse the response.";
+      
+      if (data.response && Array.isArray(data.response.messages)) {
+        botMessage = data.response.messages.join("\n");
+      } else if (typeof data.response === "string") {
+        botMessage = data.response;
+      } else if (data.message) {
+        botMessage = data.message;
+      } else {
+        botMessage = JSON.stringify(data);
+      } 
+
+      setMessages((prev) => [...prev, { text: botMessage, isUser: false }]);
+      
+      // Save AI message to backend
+      saveMessageToBackend(currentConversationId, botMessage, "BOT");
+    } catch (error) {
+      console.error("Chat error:", error);
+      setMessages((prev) => [
+        ...prev,
+        { text: "Sorry, I'm having trouble connecting to the AI right now.", isUser: false },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   const handleQuestionClick = (question: string, answer: string) => {
+    // Optionally initiate flow with this question
     setMessages((prev) => [
       ...prev,
       { text: question, isUser: true },
@@ -61,7 +180,7 @@ const Chatbot = () => {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-4 bg-gray-50">
+            <ScrollArea className="flex-1 p-4 bg-gray-50" ref={scrollRef}>
               <div className="space-y-4">
                 {messages.map((msg, idx) => (
                   <div
@@ -82,7 +201,38 @@ const Chatbot = () => {
                   </div>
                 ))}
               </div>
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white text-gray-800 border rounded-tl-none shadow-sm p-3 rounded-lg">
+                      <span className="animate-pulse">...</span>
+                    </div>
+                  </div>
+                )}
+
             </ScrollArea>
+
+            {/* Input Area */}
+            <div className="p-3 bg-white border-t">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-eaten-charcoal/50 text-sm"
+                  disabled={isLoading}
+                />
+                <Button 
+                  size="icon" 
+                  onClick={handleSend} 
+                  disabled={isLoading || !input.trim()}
+                  className="bg-eaten-charcoal hover:bg-eaten-dark"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
             {/* FAQ Options */}
             <div className="p-4 bg-white border-t">

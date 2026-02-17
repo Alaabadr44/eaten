@@ -11,8 +11,14 @@ interface Booking {
   eventType: string;
   status: string;
   eventDate: string;
-  eventCapacity: string;
+  eventCapacity: number;
 }
+
+const CAPACITY_MAP: Record<number, string> = {
+  1: "Less than 5 people",
+  2: "5-20 people",
+  3: "More than 20 people",
+};
 
 const COLORS = ['#726658', '#afa394', '#d1c6b8', '#e5e5e5', '#544b42'];
 const STATUS_COLORS = {
@@ -81,8 +87,8 @@ const ManageReports = () => {
        return acc;
     }, {} as Record<string, number>);
 
-    const capacityData = Object.entries(capacityDataMap).map(([name, value]) => ({
-        name: name.replace(/_/g, " ").toLowerCase().replace("than", ""),
+    const capacityData = Object.entries(capacityDataMap).map(([id, value]) => ({
+        name: CAPACITY_MAP[Number(id)] || `Capacity ${id}`,
         value,
         percentage: Math.round((value / total) * 100)
     })).sort((a,b) => b.value - a.value);
