@@ -18,6 +18,16 @@ interface ChatResponse {
   };
 }
 
+const parseMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(() => {
     const saved = localStorage.getItem("chat_is_open");
@@ -32,14 +42,7 @@ const Chatbot = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const storedId = localStorage.getItem("chat_conversation_id");
-    if (storedId) {
-      setConversationId(storedId);
-    }
-  }, []);
+  const scrollBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const storedId = localStorage.getItem("chat_conversation_id");
@@ -54,10 +57,18 @@ const Chatbot = () => {
 
   useEffect(() => {
     localStorage.setItem("chat_messages", JSON.stringify(messages));
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollBottomRef.current) {
+      scrollBottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        scrollBottomRef.current?.scrollIntoView({ behavior: "instant" });
+      }, 100);
+    }
+  }, [isOpen]);
 
 
 
@@ -94,7 +105,8 @@ const Chatbot = () => {
     saveMessageToBackend(currentConversationId, userMessage, "USER");
 
     try {
-      const response = await fetch("http://192.168.1.78:9010/chat", {
+      const CHAT_AI_URL = import.meta.env.VITE_CHAT_AI_URL || "http://192.168.1.78:9010/chat";
+      const response = await fetch(CHAT_AI_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,7 +194,7 @@ const Chatbot = () => {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-4 bg-gray-50" ref={scrollRef}>
+            <ScrollArea className="flex-1 p-4 bg-gray-50">
               <div className="space-y-4">
                 {messages.map((msg, idx) => (
                   <div
@@ -192,17 +204,17 @@ const Chatbot = () => {
                     }`}
                   >
                     <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
+                      dir="auto"
+                      className={`max-w-[80%] p-3 rounded-lg whitespace-pre-wrap ${
                         msg.isUser
                           ? "bg-eaten-charcoal text-white rounded-tr-none"
                           : "bg-white text-gray-800 border rounded-tl-none shadow-sm"
                       }`}
                     >
-                      {msg.text}
+                      {parseMarkdown(msg.text)}
                     </div>
                   </div>
                 ))}
-              </div>
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="bg-white text-gray-800 border rounded-tl-none shadow-sm p-3 rounded-lg">
@@ -210,7 +222,9 @@ const Chatbot = () => {
                     </div>
                   </div>
                 )}
-
+                
+                <div ref={scrollBottomRef} className="h-2" />
+              </div>
             </ScrollArea>
 
             {/* Input Area */}

@@ -39,7 +39,6 @@ const App = () => (
             <Route path="services" element={<ServicesManager />} />
             <Route path="zones" element={<ZonesManager />} />
             <Route path="bookings" element={<BookingsManager />} />
-            <Route path="bookings" element={<BookingsManager />} />
             <Route path="chats" element={<ManageChats />} />
             <Route path="reports" element={<ManageReports />} />
             <Route path="users" element={<ManageUsers />} />
