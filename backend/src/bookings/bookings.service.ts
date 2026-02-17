@@ -107,29 +107,15 @@ export class BookingsService {
     return this.bookingRepository.remove(booking);
   }
 
-  async cancel(id: string, reasonIdOrText: string | number) {
+  async cancel(id: string, reasonId: number) {
     const booking = await this.findOne(id);
     booking.status = BookingStatus.CANCELLED;
 
-    // Check if reasonIdOrText is a number or a numeric string
-    const isNumeric =
-      !isNaN(Number(reasonIdOrText)) &&
-      !isNaN(parseFloat(String(reasonIdOrText)));
-
-    if (isNumeric) {
-      try {
-        const reason = await this.cancellationReasonsService.findOne(
-          Number(reasonIdOrText),
-        );
-        booking.cancellationReason = reason.reason; // Store the text
-      } catch {
-        // Fallback: If ID not found, maybe it's just text that looks like a number?
-        // Or enforce validation?
-        throw new BadRequestException('Invalid cancellation reason ID');
-      }
-    } else {
-      // If not numeric, treat as direct text (backward compatibility or free text)
-      booking.cancellationReason = String(reasonIdOrText);
+    try {
+      const reason = await this.cancellationReasonsService.findOne(reasonId);
+      booking.cancellationReason = reason.reason;
+    } catch {
+      throw new BadRequestException('Invalid cancellation reason ID');
     }
 
     return this.bookingRepository.save(booking);

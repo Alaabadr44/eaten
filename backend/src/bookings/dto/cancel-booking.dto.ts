@@ -1,9 +1,9 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CancelBookingDto {
-  @ApiProperty({ description: 'Reason for cancellation' })
-  @IsString()
+  @ApiProperty({ description: 'ID of the cancellation reason', example: 1 })
+  @IsNumber()
   @IsNotEmpty()
-  reason: string;
+  reasonId: number;
 }
