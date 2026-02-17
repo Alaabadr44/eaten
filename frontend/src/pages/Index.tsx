@@ -5,7 +5,6 @@ import ProjectsSection from "@/components/ProjectsSection";
 import ProjectDescriptions from "@/components/ProjectDescriptions";
 import GallerySection from "@/components/GallerySection";
 import Footer from "@/components/Footer";
-import Chatbot from "@/components/Chatbot";
 
 const Index = () => {
   return (
@@ -17,7 +16,6 @@ const Index = () => {
       <ProjectDescriptions />
       <GallerySection />
       <Footer />
-      <Chatbot />
     </main>
   );
 };

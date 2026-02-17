@@ -19,11 +19,15 @@ interface ChatResponse {
 }
 
 const Chatbot = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    const saved = localStorage.getItem("chat_is_open");
+    return saved ? JSON.parse(saved) : false;
+  });
   const [faqs, setFaqs] = useState<Faq[]>([]);
-  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>([
-    { text: "Hi! How can I help you today?", isUser: false },
-  ]);
+  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(() => {
+    const saved = localStorage.getItem("chat_messages");
+    return saved ? JSON.parse(saved) : [{ text: "Hi! How can I help you today?", isUser: false }];
+  });
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +49,11 @@ const Chatbot = () => {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem("chat_is_open", JSON.stringify(isOpen));
+  }, [isOpen]);
+
+  useEffect(() => {
+    localStorage.setItem("chat_messages", JSON.stringify(messages));
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
