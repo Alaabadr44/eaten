@@ -23,7 +23,7 @@ const Chatbot = () => {
     const saved = localStorage.getItem("chat_is_open");
     return saved ? JSON.parse(saved) : false;
   });
-  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [faqs] = useState<Faq[]>([]);
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(() => {
     const saved = localStorage.getItem("chat_messages");
     return saved ? JSON.parse(saved) : [{ text: "Hi! How can I help you today?", isUser: false }];
@@ -59,14 +59,7 @@ const Chatbot = () => {
     }
   }, [messages]);
 
-  useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || "/api";
-    // Keep FAQs for initial suggestions if needed, or remove if fully replacing
-    fetch(`${API_URL}/faqs`)
-      .then((res) => res.json())
-      .then((data) => setFaqs(data))
-      .catch((err) => console.error("Failed to fetch FAQs", err));
-  }, []);
+
 
   const saveMessageToBackend = async (conversationId: string, message: string, sender: "USER" | "BOT") => {
     const API_URL = import.meta.env.VITE_API_URL || "/api";
