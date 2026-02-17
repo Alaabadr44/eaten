@@ -19,7 +19,10 @@ interface ChatResponse {
 }
 
 const parseMarkdown = (text: string) => {
-  const parts = text.split(/(\*\*.*?\*\*)/g);
+  // Convert literal "\n" or "/n" strings to actual newline characters
+  const processedText = text.replace(/\\n|\/n/g, "\n");
+  
+  const parts = processedText.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return <strong key={i}>{part.slice(2, -2)}</strong>;
