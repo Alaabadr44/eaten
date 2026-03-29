@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
 import { customAlphabet } from "nanoid";
 
 import { MessageCircle, X, Send } from "lucide-react";
@@ -18,17 +19,21 @@ interface ChatResponse {
   };
 }
 
-const parseMarkdown = (text: string) => {
-  // Convert literal "\n" or "/n" strings to actual newline characters
-  const processedText = text.replace(/\\n|\/n/g, "\n");
-  
-  const parts = processedText.split(/(\*\*.*?\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
+
+const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+const clearExpiredSession = () => {
+  const timestamp = localStorage.getItem("chat_session_timestamp");
+  if (timestamp) {
+    const startTime = parseInt(timestamp, 10);
+    if (Date.now() - startTime > SESSION_EXPIRY_MS) {
+      localStorage.removeItem("chat_messages");
+      localStorage.removeItem("chat_conversation_id");
+      localStorage.removeItem("chat_session_timestamp");
+      return true;
     }
-    return part;
-  });
+  }
+  return false;
 };
 
 const Chatbot = () => {
@@ -38,21 +43,24 @@ const Chatbot = () => {
   });
   const [faqs] = useState<Faq[]>([]);
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(() => {
+    clearExpiredSession();
     const saved = localStorage.getItem("chat_messages");
     return saved ? JSON.parse(saved) : [{ text: "Hi! How can I help you today?", isUser: false }];
   });
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [conversationId, setConversationId] = useState("");
+  const [conversationId, setConversationId] = useState(() => {
+    const saved = localStorage.getItem("chat_conversation_id");
+    return saved || "";
+  });
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const storedId = localStorage.getItem("chat_conversation_id");
-    if (storedId) {
-      setConversationId(storedId);
+    if (conversationId && !localStorage.getItem("chat_session_timestamp")) {
+      localStorage.setItem("chat_session_timestamp", Date.now().toString());
     }
-  }, []);
+  }, [conversationId]);
 
   useEffect(() => {
     localStorage.setItem("chat_is_open", JSON.stringify(isOpen));
@@ -214,7 +222,11 @@ const Chatbot = () => {
                           : "bg-white text-gray-800 border rounded-tl-none shadow-sm"
                       }`}
                     >
-                      {parseMarkdown(msg.text)}
+                      <div className={`prose prose-sm max-w-none ${msg.isUser ? "prose-invert" : ""}`}>
+                        <ReactMarkdown>
+                          {msg.text.replace(/\\n|\/n/g, "\n")}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 ))}
