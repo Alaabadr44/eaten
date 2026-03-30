@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import ReactMarkdown from "react-markdown";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { customAlphabet } from "nanoid";
 
 import { MessageCircle, X, Send } from "lucide-react";
@@ -7,72 +8,85 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface Faq {
-  id: string;
-  question: string;
-  answer: string;
+// ─── Markdown renderer ────────────────────────────────────────────────────────
+marked.setOptions({ gfm: true, breaks: true });
+
+function renderMarkdown(text: string): string {
+  const raw = text.replace(/\\n|\/n/g, "\n");
+  const html = marked.parse(raw) as string;
+  return DOMPurify.sanitize(html);
 }
 
-interface ChatResponse {
-  response: {
-    messages: string[];
-  };
-}
-
-
+// ─── Session helpers ──────────────────────────────────────────────────────────
 const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-const clearExpiredSession = () => {
-  const timestamp = localStorage.getItem("chat_session_timestamp");
-  if (timestamp) {
-    const startTime = parseInt(timestamp, 10);
-    if (Date.now() - startTime > SESSION_EXPIRY_MS) {
-      localStorage.removeItem("chat_messages");
-      localStorage.removeItem("chat_conversation_id");
-      localStorage.removeItem("chat_session_timestamp");
-      return true;
-    }
-  }
-  return false;
+const KEYS = {
+  messages: "chat_messages",
+  conversationId: "chat_conversation_id",
+  timestamp: "chat_session_timestamp",
+  isOpen: "chat_is_open",
 };
 
+function isSessionExpired(): boolean {
+  const ts = localStorage.getItem(KEYS.timestamp);
+  if (!ts) return false;
+  return Date.now() - parseInt(ts, 10) > SESSION_EXPIRY_MS;
+}
+
+function wipeSession() {
+  localStorage.removeItem(KEYS.messages);
+  localStorage.removeItem(KEYS.conversationId);
+  localStorage.removeItem(KEYS.timestamp);
+}
+
+const WELCOME: { text: string; isUser: boolean }[] = [
+  { text: "Hi! How can I help you today?", isUser: false },
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 const Chatbot = () => {
-  const [isOpen, setIsOpen] = useState(() => {
-    const saved = localStorage.getItem("chat_is_open");
-    return saved ? JSON.parse(saved) : false;
+  const [isOpen, setIsOpen] = useState<boolean>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(KEYS.isOpen) ?? "false");
+    } catch {
+      return false;
+    }
   });
-  const [faqs] = useState<Faq[]>([]);
+
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(() => {
-    clearExpiredSession();
-    const saved = localStorage.getItem("chat_messages");
-    return saved ? JSON.parse(saved) : [{ text: "Hi! How can I help you today?", isUser: false }];
+    // On mount: immediately check & wipe expired sessions
+    if (isSessionExpired()) {
+      wipeSession();
+      return WELCOME;
+    }
+    try {
+      const saved = localStorage.getItem(KEYS.messages);
+      return saved ? JSON.parse(saved) : WELCOME;
+    } catch {
+      return WELCOME;
+    }
   });
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [conversationId, setConversationId] = useState(() => {
-    const saved = localStorage.getItem("chat_conversation_id");
-    return saved || "";
+  const [conversationId, setConversationId] = useState<string>(() => {
+    if (isSessionExpired()) return "";
+    return localStorage.getItem(KEYS.conversationId) ?? "";
   });
+
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
+  // ── Persist messages ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (conversationId && !localStorage.getItem("chat_session_timestamp")) {
-      localStorage.setItem("chat_session_timestamp", Date.now().toString());
-    }
-  }, [conversationId]);
-
-  useEffect(() => {
-    localStorage.setItem("chat_is_open", JSON.stringify(isOpen));
-  }, [isOpen]);
-
-  useEffect(() => {
-    localStorage.setItem("chat_messages", JSON.stringify(messages));
-    if (scrollBottomRef.current) {
-      scrollBottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    localStorage.setItem(KEYS.messages, JSON.stringify(messages));
+    scrollBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // ── Persist chat-open state ─────────────────────────────────────────────────
+  useEffect(() => {
+    localStorage.setItem(KEYS.isOpen, JSON.stringify(isOpen));
+  }, [isOpen]);
+
+  // ── Scroll on open ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -81,61 +95,75 @@ const Chatbot = () => {
     }
   }, [isOpen]);
 
+  // ── Background session expiry check (every 60 s) ────────────────────────────
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (isSessionExpired()) {
+        wipeSession();
+        setMessages(WELCOME);
+        setConversationId("");
+      }
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
-
-  const saveMessageToBackend = async (conversationId: string, message: string, sender: "USER" | "BOT") => {
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+  const saveMessageToBackend = async (
+    convId: string,
+    message: string,
+    sender: "USER" | "BOT"
+  ) => {
     const API_URL = import.meta.env.VITE_API_URL || "/api";
     try {
       await fetch(`${API_URL}/chats/conversation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, message, sender }),
+        body: JSON.stringify({ conversationId: convId, message, sender }),
       });
-    } catch (error) {
-      console.error("Failed to save message to backend", error);
+    } catch (err) {
+      console.error("Failed to save message to backend", err);
     }
   };
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = input;
+    const userMessage = input.trim();
     setInput("");
     setMessages((prev) => [...prev, { text: userMessage, isUser: true }]);
     setIsLoading(true);
 
-    let currentConversationId = conversationId;
-    if (!currentConversationId) {
-       const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 10);
-       currentConversationId = `conv_${nanoid()}`;
-       setConversationId(currentConversationId);
-       localStorage.setItem("chat_conversation_id", currentConversationId);
+    // Create or reuse conversation ID
+    let convId = conversationId;
+    if (!convId) {
+      const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 10);
+      convId = `conv_${nanoid()}`;
+      setConversationId(convId);
+      localStorage.setItem(KEYS.conversationId, convId);
+      localStorage.setItem(KEYS.timestamp, Date.now().toString());
     }
 
-    // Save User message to backend
-    saveMessageToBackend(currentConversationId, userMessage, "USER");
+    saveMessageToBackend(convId, userMessage, "USER");
 
     try {
-      const CHAT_AI_URL = import.meta.env.VITE_CHAT_AI_URL || "http://192.168.1.78:9010/chat";
+      const CHAT_AI_URL =
+        import.meta.env.VITE_CHAT_AI_URL || "http://192.168.1.78:9010/chat";
+
       const response = await fetch(CHAT_AI_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          conversationId: currentConversationId,
-          message: userMessage, 
-          history: [], 
+          conversationId: convId,
+          message: userMessage,
+          history: [],
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to get response");
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
 
-      // Parse response based on provided format: { response: { messages: ["..."] } }
       let botMessage = "I received your message but couldn't parse the response.";
-      
       if (data.response && Array.isArray(data.response.messages)) {
         botMessage = data.response.messages.join("\n");
       } else if (typeof data.response === "string") {
@@ -144,17 +172,18 @@ const Chatbot = () => {
         botMessage = data.message;
       } else {
         botMessage = JSON.stringify(data);
-      } 
+      }
 
       setMessages((prev) => [...prev, { text: botMessage, isUser: false }]);
-      
-      // Save AI message to backend
-      saveMessageToBackend(currentConversationId, botMessage, "BOT");
-    } catch (error) {
-      console.error("Chat error:", error);
+      saveMessageToBackend(convId, botMessage, "BOT");
+    } catch (err) {
+      console.error("Chat error:", err);
       setMessages((prev) => [
         ...prev,
-        { text: "Sorry, I'm having trouble connecting to the AI right now.", isUser: false },
+        {
+          text: "Sorry, I'm having trouble connecting to the AI right now.",
+          isUser: false,
+        },
       ]);
     } finally {
       setIsLoading(false);
@@ -166,15 +195,6 @@ const Chatbot = () => {
       e.preventDefault();
       handleSend();
     }
-  };
-
-  const handleQuestionClick = (question: string, answer: string) => {
-    // Optionally initiate flow with this question
-    setMessages((prev) => [
-      ...prev,
-      { text: question, isUser: true },
-      { text: answer, isUser: false },
-    ]);
   };
 
   // Hide on admin routes
@@ -210,34 +230,43 @@ const Chatbot = () => {
                 {messages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`flex ${
-                      msg.isUser ? "justify-end" : "justify-start"
-                    }`}
+                    className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
                   >
                     <div
                       dir="auto"
-                      className={`max-w-[80%] p-3 rounded-lg whitespace-pre-wrap ${
+                      className={`max-w-[80%] p-3 rounded-lg ${
                         msg.isUser
                           ? "bg-eaten-charcoal text-white rounded-tr-none"
                           : "bg-white text-gray-800 border rounded-tl-none shadow-sm"
                       }`}
                     >
-                      <div className={`prose prose-sm max-w-none ${msg.isUser ? "prose-invert" : ""}`}>
-                        <ReactMarkdown>
-                          {msg.text.replace(/\\n|\/n/g, "\n")}
-                        </ReactMarkdown>
-                      </div>
+                      {msg.isUser ? (
+                        // User messages: plain text, no markdown
+                        <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                      ) : (
+                        // Bot messages: full markdown rendered as HTML
+                        <div
+                          className="prose prose-sm max-w-none
+                            prose-p:my-1 prose-ul:my-1 prose-ol:my-1
+                            prose-li:my-0 prose-headings:my-1
+                            prose-a:text-blue-600 prose-a:underline"
+                          dangerouslySetInnerHTML={{
+                            __html: renderMarkdown(msg.text),
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 ))}
+
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="bg-white text-gray-800 border rounded-tl-none shadow-sm p-3 rounded-lg">
-                      <span className="animate-pulse">...</span>
+                      <span className="animate-pulse text-sm">...</span>
                     </div>
                   </div>
                 )}
-                
+
                 <div ref={scrollBottomRef} className="h-2" />
               </div>
             </ScrollArea>
@@ -254,32 +283,14 @@ const Chatbot = () => {
                   className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-eaten-charcoal/50 text-sm"
                   disabled={isLoading}
                 />
-                <Button 
-                  size="icon" 
-                  onClick={handleSend} 
+                <Button
+                  size="icon"
+                  onClick={handleSend}
                   disabled={isLoading || !input.trim()}
                   className="bg-eaten-charcoal hover:bg-eaten-dark"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
-              </div>
-            </div>
-
-            {/* FAQ Options */}
-            <div className="p-4 bg-white border-t">
-              <p className="text-xs text-gray-500 mb-2 font-medium">
-                Common Questions:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {faqs.map((faq) => (
-                  <button
-                    key={faq.id}
-                    onClick={() => handleQuestionClick(faq.question, faq.answer)}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1.5 rounded-full transition-colors text-left"
-                  >
-                    {faq.question}
-                  </button>
-                ))}
               </div>
             </div>
           </motion.div>
@@ -290,11 +301,7 @@ const Chatbot = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="rounded-full w-14 h-14 bg-eaten-charcoal hover:bg-eaten-dark shadow-xl flex items-center justify-center p-0"
       >
-        {isOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
-          <MessageCircle className="w-6 h-6" />
-        )}
+        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
       </Button>
     </div>
   );
