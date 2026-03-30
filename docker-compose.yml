@@ -15,7 +15,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "${BACKEND_PORT:-3001}:3000"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -28,8 +28,20 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT:-8081}:80"
     depends_on:
+      - backend
+
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/nginx/conf.d:/etc/nginx/conf.d
+      - ./backend/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
       - backend
 
 volumes:
