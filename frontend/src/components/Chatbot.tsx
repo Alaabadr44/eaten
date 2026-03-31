@@ -147,7 +147,7 @@ const Chatbot = () => {
 
     try {
       const CHAT_AI_URL =
-        import.meta.env.VITE_CHAT_AI_URL || "http://192.168.1.78:9010/chat";
+        import.meta.env.VITE_CHAT_AI_URL || "https://clinton-declaration-int-currencies.trycloudflare.com/chat";
 
       const response = await fetch(CHAT_AI_URL, {
         method: "POST",
