@@ -8,6 +8,13 @@ REMOTE_APP_DIR="/home/ubuntu/eaten-app"
 CALLCENTER_DIR="/home/ubuntu/app"
 DOMAIN="eaten.waterway.group"
 
+# Handle Arguments
+SEED_DATABASE=false
+if [[ "$1" == "--seed" ]]; then
+    SEED_DATABASE=true
+    echo "🌱 Seeding enabled for this deployment."
+fi
+
 echo "🚀 Starting NUCLEAR deployment of Eaten to AWS ($REMOTE_HOST)..."
 
 # 1. Build Frontend Locally
@@ -15,7 +22,7 @@ echo "📦 Building Frontend..."
 cd frontend
 npm install
 VITE_API_URL="https://eaten.waterway.group/api" \
-VITE_CHAT_AI_URL="https://clinton-declaration-int-currencies.trycloudflare.com/chat" \
+VITE_CHAT_AI_URL="https://eaten.waterway.group/ai-api/chat" \
 npm run build
 cd ..
 
@@ -31,6 +38,7 @@ mkdir -p deploy_package/frontend_dist
 cp -R frontend/dist/* deploy_package/frontend_dist/
 cp frontend/nginx.conf deploy_package/frontend_nginx.conf
 cp -R backend deploy_package/backend
+rm -rf deploy_package/backend/node_modules
 cp docker-compose.yml deploy_package/docker-compose.yml
 cp .env deploy_package/.env 2>/dev/null || touch deploy_package/.env
 
@@ -52,7 +60,7 @@ zip -r deploy_package.zip deploy_package > /dev/null
 
 # 3. Upload
 echo "📤 Uploading..."
-scp -i "$PEM_KEY" -o StrictHostKeyChecking=no deploy_package.zip "$REMOTE_USER@$REMOTE_HOST:~/"
+rsync -avz --partial --progress -e "ssh -i \"$PEM_KEY\" -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=3" deploy_package.zip "$REMOTE_USER@$REMOTE_HOST:~/"
 
 # 4. Remote Nuclear Deployment
 echo "🏗️ Nuclear deployment and routing fix..."
@@ -70,7 +78,17 @@ ssh -i "$PEM_KEY" -o StrictHostKeyChecking=no "$REMOTE_USER@$REMOTE_HOST" << SSH
     # Deploy Docker
     cd $REMOTE_APP_DIR
     sudo docker compose build --no-cache backend
-    sudo docker compose up -d
+    sudo docker compose up -d --build
+    
+    # Seeding
+    if [ "$SEED_DATABASE" = "true" ]; then
+        echo "🌱 Seeding database..."
+        sudo docker compose exec -T backend node dist/scripts/create-admin || echo "Admin script failed."
+        sudo docker compose exec -T backend node dist/scripts/create-services || echo "Services script failed."
+        sudo docker compose exec -T backend node dist/scripts/create-zones || echo "Zones script failed."
+    else
+        echo "⏩ Skipping seeding (use --seed to enable)..."
+    fi
     
     # Proxy Config
     echo "🌐 Routing fix..."
@@ -92,7 +110,7 @@ server {
     ssl_certificate /etc/nginx/certs/eaten_fullchain.pem;
     ssl_certificate_key /etc/nginx/certs/eaten_privkey.pem;
     location / {
-        proxy_pass http://172.17.0.1:8082;
+        proxy_pass http://172.17.0.1:8083;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;

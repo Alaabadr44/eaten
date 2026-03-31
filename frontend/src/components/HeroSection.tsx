@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import welcomeBg from "@/assets/welcome-bg.png";
-import eatenLogoWhite from "@/assets/eaten-logo-white.png";
 
 const HeroSection = () => {
   return (
@@ -14,8 +14,6 @@ const HeroSection = () => {
         backgroundPosition: "center",
       }}
     >
-
-
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center">
           {/* Welcome Text */}
@@ -45,9 +43,11 @@ const HeroSection = () => {
               around your moments. From corporate events to private celebrations.
               Thoughtfully prepared, beautifully presented, and seamlessly served.
             </p>
-            <Button variant="catering" size="lg">
-              Book Catering
-            </Button>
+            <Link to="/catering">
+              <Button variant="catering" size="lg">
+                Book Catering
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { AdminsService } from '../admins/admins.service';
-import * as bcrypt from 'bcrypt';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -9,18 +8,21 @@ async function bootstrap() {
 
   const email = 'admin@eaten.com';
   const password = 'admin';
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  const passwordHash = await bcrypt.hash(password, 10);
-
+  
+  // Check if an admin with THIS email exists
   const existing = await adminsService.findOne(email);
   if (existing) {
-    console.log('Admin already exists');
+    console.log(`Admin ${email} already exists.`);
   } else {
-    // Service now accepts DTO and hashes password internally
+    // If not, maybe there's an old admin with a different email?
+    // For this project, we'll just create the new one.
     await adminsService.create({ email, password });
     console.log(`Admin created: ${email} / ${password}`);
   }
 
   await app.close();
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Seeding failed:', err);
+  process.exit(1);
+});

@@ -17,6 +17,12 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         secure: false,
       },
+      '/ai-api': {
+        target: 'http://localhost:9010',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/ai-api/, ''),
+      },
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

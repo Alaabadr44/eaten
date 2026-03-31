@@ -147,7 +147,7 @@ const Chatbot = () => {
 
     try {
       const CHAT_AI_URL =
-        import.meta.env.VITE_CHAT_AI_URL || "https://clinton-declaration-int-currencies.trycloudflare.com/chat";
+        import.meta.env.VITE_CHAT_AI_URL || "/ai-api/chat";
 
       const response = await fetch(CHAT_AI_URL, {
         method: "POST",

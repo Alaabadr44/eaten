@@ -105,11 +105,11 @@ const Catering = () => {
                             transition={{ duration: 0.8, delay: 0.2 }}
                             className="flex justify-center md:justify-end"
                         >
-                            <div className="w-[194px] h-[254px] overflow-hidden rounded-lg shadow-2xl transition-transform duration-500">
+                            <div className="relative w-full aspect-[4/5] md:aspect-square max-w-sm ml-auto overflow-hidden rounded-xl shadow-2xl group">
                                 <img
-                                    src="/lovable-uploads/catering-hero-food.png"
-                                    alt="Gourmet dish"
-                                    className="w-full h-full object-cover"
+                                    src="/lovable-uploads/catering_food_dish_1770187014122.png"
+                                    alt="Gourmet Catering"
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
                             </div>
                         </motion.div>

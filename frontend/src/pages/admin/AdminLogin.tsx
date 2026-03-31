@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -8,8 +10,18 @@ import { useNavigate } from "react-router-dom";
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("remembered_admin_email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +36,14 @@ const AdminLogin = () => {
 
       if (response.ok) {
         localStorage.setItem("admin_token", data.data.access_token);
+        
+        // Handle "Remember Me"
+        if (rememberMe) {
+          localStorage.setItem("remembered_admin_email", email);
+        } else {
+          localStorage.removeItem("remembered_admin_email");
+        }
+
         toast({ title: "Login successful", description: "Welcome back, Admin." });
         navigate("/admin/dashboard");
       } else {
@@ -72,24 +92,26 @@ const AdminLogin = () => {
                 className="bg-white border-eaten-taupe"
               />
             </div>
+
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox 
+                id="rememberMe" 
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              />
+              <Label 
+                htmlFor="rememberMe" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-eaten-charcoal cursor-pointer"
+              >
+                Remember me
+              </Label>
+            </div>
+
             <Button
               type="submit"
               className="w-full bg-eaten-dark hover:bg-eaten-charcoal transition-colors"
             >
               Login
-            </Button>
-            
-            {/* Debug Button - Remove later */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full mt-2"
-              onClick={() => {
-                setEmail("admin@eaten.com");
-                setPassword("admin");
-              }}
-            >
-              Debug: Fill Credentials
             </Button>
           </form>
         </CardContent>
